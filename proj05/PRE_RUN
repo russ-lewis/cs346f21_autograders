@@ -1,0 +1,12 @@
+#! /bin/bash
+
+
+./setup_empty_server
+
+cp school /usr/lib/cgi-bin/
+
+cd /etc/apache2/mods-enabled/
+ln -s ../mods-available/cgi.load
+
+service apache2 start
+

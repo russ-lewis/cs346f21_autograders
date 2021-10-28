@@ -1,0 +1,31 @@
+#!/usr/bin/env python3
+
+import json
+import os
+import sys
+
+
+
+json_output = {
+                "stdout_visibility" : "never",
+                "tests"             : [{ "score"      : 0,
+                                         "max_score"  : 0,
+                                         "name"       : "Dummy",
+                                         "output"     : "Ignore me.  This project didn't have an autograder",
+                                         "visibility" : "always",
+                                       }]
+              }
+
+
+if not os.path.exists("../results"):
+    os.system("mkdir ../results")
+json_filename = "../results/results.json"
+
+
+with open(json_filename, "w") as json_file:
+    json.dump(json_output, json_file, indent=2)
+
+
+print("AUTOGRADER COMPLETED SUCCESSFULLY")
+
+

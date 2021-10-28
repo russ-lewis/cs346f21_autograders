@@ -1,0 +1,21 @@
+{
+  "courses" : {
+    "289389": {
+        "branch" : "master",
+        "comment": "CSC 346 Fall 21"
+    },
+    "289394": {
+        "branch" : "devel",
+        "comment": "CSC 120 Fall 21 - Devel"
+    },
+    "dummy": "so that trailing commas are allowed"
+  },
+
+  "assignments" : {
+    "Project 05": "proj05",
+    "Project 06": "proj06",
+
+    "dummy": "so that trailing commas are allowed"
+  }
+}
+

@@ -1,0 +1,525 @@
+#!/usr/bin/env python3
+
+import json
+import os
+import sys
+import subprocess
+import sys
+import tempfile
+import glob
+import math
+
+
+
+# CONFIG OPTIONS (overall)
+
+MAX_TESTCASE_SCORE = 0
+
+DUMMY_ERROR_MESSAGES = False
+
+# CONFIG OPTIONS (coverage)
+
+CHECK_COVERAGE = False
+MAX_COVERAGE_SCORE =  10
+COVERAGE_TARGET    = .90
+COVERAGE_OMIT_LIST = "--omit=test-*"
+
+if sys.argv[1:] == ["--half-credit"]:
+    print("+-----------------------------------------+")
+    print("|               HALF CREDIT               |")
+    print("|                                         |")
+    print("| The --half-credit parameter was passed  |")
+    print("| to do_per_project_autograding.  The     |")
+    print("| total number of points available will   |")
+    print("| be cut in half.                         |")
+    print("+-----------------------------------------+")
+    divisor = 2
+else:
+    divisor = 1
+
+
+
+instructor_testcase_list = [name.split('/')[-1].split('.')[0] for name in glob.glob("../instructor_code/test-*.py")]
+instructor_infile_list   = [name.split('/')[-1].split('.')[0] for name in glob.glob("../instructor_code/test-*.in")]
+instructor_stdin_list    = [name.split('/')[-1].split('.')[0] for name in glob.glob("../instructor_code/test-*.stdin")]
+
+# these are for testcases that have to be manually examined
+noCheck_testcase_list = [name.split('/')[-1].split('.')[0] for name in glob.glob("../instructor_code/noCheck-*.py")]
+noCheck_infile_list   = [name.split('/')[-1].split('.')[0] for name in glob.glob("../instructor_code/noCheck-*.in")]
+noCheck_stdin_list    = [name.split('/')[-1].split('.')[0] for name in glob.glob("../instructor_code/noCheck-*.stdin")]
+
+for filename in instructor_testcase_list + instructor_infile_list + instructor_stdin_list + \
+                   noCheck_testcase_list +    noCheck_infile_list +    noCheck_stdin_list :
+    assert os.path.exists(filename+".out")
+
+
+
+reqd_student_py_files = []
+  # update this for every assignment!  This is used to perform the style checking.
+  # TODO: should we just get this with glob() instead?
+
+
+
+# TODO: Do we get bitten by floating-point issues often?
+per_testcase = MAX_TESTCASE_SCORE / len(instructor_testcase_list + instructor_infile_list + instructor_stdin_list) / divisor
+
+
+
+# sanity check the config: do all of the expected testcases exist, and also
+# have .out files?
+for basename in instructor_testcase_list:
+    test_prog = basename+".py"
+    outfile   = basename+".out"
+
+    if not os.path.exists(test_prog):
+        print("CONFIG ERROR: The anticipated instructor testcase, {}, does not exist.".format(test_prog))
+        sys.exit(1)
+    if not os.path.exists(outfile):
+        print("CONFIG ERROR: The instructor testcase, {}, does not have a matching output file {}.".format(test_prog,outfile))
+        sys.exit(1)
+
+for basename in instructor_infile_list:
+    test_prog = basename+".in"
+    outfile   = basename+".out"
+
+    if not os.path.exists(test_prog):
+        print("CONFIG ERROR: The anticipated instructor testcase, {}, does not exist.".format(test_prog))
+        sys.exit(1)
+    if not os.path.exists(outfile):
+        print("CONFIG ERROR: The instructor testcase, {}, does not have a matching output file {}.".format(test_prog,outfile))
+        sys.exit(1)
+
+for basename in instructor_stdin_list:
+    test_prog = basename+".stdin"
+    outfile   = basename+".out"
+
+    if not os.path.exists(test_prog):
+        print("CONFIG ERROR: The anticipated instructor testcase, {}, does not exist.".format(test_prog))
+        sys.exit(1)
+    if not os.path.exists(outfile):
+        print("CONFIG ERROR: The instructor testcase, {}, does not have a matching output file {}.".format(test_prog,outfile))
+        sys.exit(1)
+
+
+
+# TIMEOUT is the per-input timeout (secs) intended to catch infinite loops
+TIMEOUT = 30
+
+# STYLE_OPTS is a list of options to pass to the style checker.  See
+# http://pycodestyle.pycqa.org/en/latest/intro.html#error-codes for the full list.
+STYLE_OPTS = ['--select=E111,E114,E115,E116,E117,E261,E262,E265,E275,E501,E701,E702,E703,E704,E722,W505']
+
+
+
+# are we running inside the AutoGrader container, or in a unit-test directory?
+
+LOCAL = not os.path.exists("/autograder")
+
+if LOCAL:
+    RESULT_DIR = "./results"
+else:
+    RESULT_DIR = "../results"
+
+if not os.path.exists(RESULT_DIR):
+    os.system("mkdir "+RESULT_DIR)
+
+json_filename = RESULT_DIR + "/results.json"
+
+
+
+# What testcases are available?  (Some of these might be student testcases, but
+# we almost always have instructor testcases as well.)
+
+all_testcases = [name.split('.')[0] for name in glob.glob("test-*.py")+glob.glob("test-*.in")]
+
+student_testcase_list = [name.split('.')[0] for name in glob.glob("cover_*.py")] + \
+                        sorted(set(all_testcases) - set(instructor_testcase_list) - set(instructor_infile_list) - set(instructor_stdin_list))
+
+
+
+# Sometimes, students upload files from Windows boxes, and if they composed
+# text files with Notepad (or similar), they have CR-LF sequences that screw
+# up our input.
+#
+# BUGFIX: Correcting the directory that we're searching in.
+# BUGFIX: Adding "/dev/null" to the list simply makes sure that we have no chance
+#         of running the bare 'dos2unix' call (which would block forever)
+subprocess.run(["dos2unix", "/dev/null"] + glob.glob("*"))
+print()
+
+
+
+# this variable is a list of dictionaries, where the dictionaries are ready to
+# be converted straight to JSON.
+#
+# This is more than just testcases!  There might be an entry for
+# style-checking (probably the first one), and there might also be some for
+# coverage (at the end).
+
+testcase_results = []
+
+
+
+if divisor != 1:
+    assert divisor == 2
+    testcase_results.append({ "name"       : "HALF CREDIT",
+                              "output"     : "Because this is a 'Half Credit' assignment,\n"
+                                             "all testcase scores are cut in half.",
+                              "visibility" : "always" })
+
+
+
+# run the style checker.  Then report them as if they were a testcase (with
+# no associated score).
+
+# TODO: Port this to use an output pipe.  I *think* that this is easy, right?
+#       just do stdout=subprocess.PIPE?  The only thing I'm not clear on is
+#       whether deadlocks (due to a full pipe) are a worry or not.  So I'll
+#       wait for now.
+
+with open("style.out", "w") as outfile:
+    subprocess.run(['pycodestyle'] +STYLE_OPTS+ reqd_student_py_files,
+                timeout=TIMEOUT,
+                stdout=outfile,
+                stderr=subprocess.STDOUT)
+
+with open("style.out") as outfile:
+    style_issues = outfile.read()
+
+if style_issues == "":
+    style_text = "STYLE ISSUES: None"
+else:
+    style_text = "STYLE ISSUES:\n"+style_issues
+
+testcase_results.append({   # no score for style; ordinary testcases get
+                            # a score that's auto-scaled for the number of
+                            # instructor testcases.
+                          "output"     : style_text,
+                          "visibility" : "always"})
+
+
+
+for MODE in ["py","in","stdin"]:
+    if MODE == "py":
+        testcases = instructor_testcase_list
+    elif MODE == "in":
+        testcases = instructor_infile_list
+    elif MODE == "stdin":
+        testcases = instructor_stdin_list
+    else:
+        assert False
+
+
+    for basename in sorted(testcases):
+        outfile         = basename+".out"
+        student_outfile = basename+".student_output"
+
+        visible         = ("invis" not in basename)
+
+
+        # is the testcase a program, or an input file of some sort?
+        if MODE == "py":
+            prog = basename+".py"
+
+        elif MODE in ["in","stdin"]:
+            basename_pieces = basename.split('-')
+            assert basename_pieces[0] == "test"
+
+            prog = basename_pieces[1]+".py"
+
+        else:
+            assert False
+
+
+        # where does stdin come from?
+        if MODE == "py":
+            input_cmd = "cat /dev/null"
+        elif MODE == "in":
+            input_cmd = f"echo {basename}.in"
+        elif MODE == "stdin":
+            input_cmd = f"cat  {basename}.stdin"
+        else:
+            assert False
+
+
+        # these testcases need complete reports.  We capture the output
+        # (including stderr), and compare it against the output file.
+
+
+        # run the testcase, save the output.
+
+        rc = os.system(f"{input_cmd} | timeout {TIMEOUT} python3 -u {prog} > {student_outfile} 2>&1")
+        timeout_occurred = (rc == 124*256)
+
+        with open(student_outfile) as student_out:
+            student_output = student_out.readlines()
+
+
+        # do we need to sort the output?
+        if "AUTOGRADER_SORT" in basename:
+            os.system("cat {} | sort > {}.sorted".format(student_outfile, student_outfile))
+            os.system("mv {}.sorted {}"          .format(student_outfile, student_outfile))
+
+
+        # capture the standard output.  Truncate the student output if required.
+
+        with open(outfile) as expected_out:
+            ref_output = expected_out.readlines()
+
+        if len(student_output) > len(ref_output)+20:
+            student_output = student_output[:len(ref_output)+20]
+            student_output.append("--- OUTPUT TOO LONG, TRUNCATED ---")
+
+
+        # construct a testcase report.  In all cases, the "possible" is the same,
+        # so you don't have to worry about that.  But there are many failure
+        # cases.  In all cases, set 'score' (max: :per_testcase) as well as
+        # 'output'.
+
+        if timeout_occurred:
+            output = "!!! ERROR: Your program timed out, probably due to an infinite loop."
+            score  = 0
+
+        else:
+
+            # timeout not hit, look for a possible diff between the outputs.
+
+            diff_filename = basename+".diff"
+
+            if DUMMY_ERROR_MESSAGES == False:
+                os.system("diff -wB {} {} >{} 2>&1".format(outfile, student_outfile, diff_filename))
+            else:
+                # NOTE: I tried to use process substitution here, but it silently
+                #       failed.  My guess is that system() doesn't use bash to
+                #       parse the commands.  So I had to use something simpler.
+                os.system("cat {} | sed -e 's/^ERROR:.*$/ERROR: something/g' > {}.cut".format(outfile,outfile))
+                os.system("cat {} | sed -e 's/^ERROR:.*$/ERROR: something/g' > {}.cut".format(student_outfile,student_outfile))
+                os.system("diff -wB {}.cut {}.cut >{} 2>&1".format(outfile, student_outfile, diff_filename))
+
+            with open(diff_filename) as df:
+                diff_out = df.readlines()
+
+                if len(diff_out) > 1000:
+                    diff_out = diff_out[:1000]
+                    diff_out.append("--- DIFF OUTPUT TOO LONG, TRUNCATED ---")
+                    skip_expected_output = True
+                else:
+                    skip_expected_output = False
+
+
+            # based on diff, we can figure out whether the testcase passed or not.
+
+            if len(diff_out) == 0:
+                score  = per_testcase
+                output = "Testcase Passed"
+
+            else:
+                score  = 0
+                output = """TESTCASE FAILED.
+
+>> Your output differs from the expected output:
+{}""".format("\n".join(["   "+line for line in diff_out]))
+
+                if not skip_expected_output:
+                    output += """
+
+>> Expected output:
+{}
+
+>> Actual output:
+{}""".format("\n".join(ref_output),
+             "\n".join(student_output))
+
+
+        # all cases are now handled, except for reporting overall results.
+
+        testcase_results.append({ "score"      : score,
+                                  "max_score"  : per_testcase,
+                                  "name"       : basename,
+                                  "output"     : output,
+                                  "visibility" : "always" if visible else "after_published" })
+
+
+
+# the noCheck testcases are the same as the ordinary
+# testcases, except:
+#    1) No expected outfile
+#    2) No score reported, or diff performed
+#    3) Always show the results in the output
+
+assert noCheck_infile_list == [] # TODO: handle this, if I ever actually create this type of testcase.
+
+for basename in sorted(noCheck_testcase_list):
+    test_prog       = basename+".py"
+    student_outfile = basename+".student_output"
+
+    # will I ever write an "invisible" noCheck testcase?  I'm not sure.
+    visible         = ("invis" not in basename)
+
+
+    # run the testcase, save the output.
+
+    rc = os.system(f"timeout {TIMEOUT} python3 -u {test_prog} > {student_outfile} 2>&1")
+    timeout_occurred = (rc == 124*256)
+
+    with open(student_outfile) as student_out:
+        student_output = student_out.readlines()
+
+
+
+    # construct a testcase report.
+
+    if timeout_occurred:
+        output = "!!! ERROR: Your program timed out, probably due to an infinite loop."
+
+    else:
+        output = """TESTCASE COMPLETED (no automated check is possible).
+
+>> Your output:
+{}""".format("\n".join(student_output))
+
+
+    # report the results into the testcase output list.
+
+    testcase_results.append({ "name"       : basename,
+                              "output"     : output,
+                              "visibility" : "always" if visible else "after_published" })
+
+
+
+if not CHECK_COVERAGE:
+    print("Skipping the coverage check because CHECK_COVERAGE is False.")
+    print()
+
+elif len(student_testcase_list) == 0:
+    testcase_results.append({ "score"      : 0,
+                              "max_score"  : MAX_COVERAGE_SCORE,
+                              "name"       : "Coverage",
+                              "output"     : "*** THERE WERE NO STUDENT TESTCASES - AND SO YOU CAN'T GET A COVERAGE SCORE.",
+                              "visibility" : "always",
+                            })
+
+
+else:
+    # run the student testcases only (ignoring all output), but under the coverage tool.
+    for basename in sorted(student_testcase_list):
+        test_prog = basename+".py"
+
+        os.system(f"timeout {TIMEOUT} python3 -u -m coverage run --append {COVERAGE_OMIT_LIST} {test_prog} >/dev/null 2>/dev/null")
+            # note that we ignore timeouts here - we're just trying to get coverage data
+
+
+
+    # now, generate all of the coverage repots:
+    #    coverage report   : builds a summary table
+    #    coverage annotate : builds annotated versions of each tracked file.
+
+    coverage_report_filename = "coverage_report.txt"
+    os.system(f"python3 -u -m coverage report > {coverage_report_filename}")
+    os.system( "python3 -u -m coverage annotate")
+    annotated_filenames = sorted(glob.glob("*.py,cover"))
+
+
+
+    # read the report file; extract the key fields from the last line; but also
+    # save the data as a summary report.
+
+    with open(coverage_report_filename) as report:
+        report_data = report.readlines()
+
+        try:
+            last_line_fields = report_data[-1].split()
+            total_stmts = int(last_line_fields[1])
+            miss_stmts  = int(last_line_fields[2])
+        except:
+            report_data = ["NOTE: The coverage report was not parsable; I've given dummy values for the line counts.",""]+report_data
+            total_stmts = 100
+            miss_stmts  = 100
+
+        hit_stmts   = total_stmts - miss_stmts
+
+        # now that we've read the lines, we combine it all together into
+        # a string.
+        report = "\n".join(report_data)
+
+
+
+    # did we cover enough?
+
+    target_stmts = total_stmts * COVERAGE_TARGET
+    hit_rate     = hit_stmts / target_stmts
+    if hit_rate >= 1.0:
+        score = MAX_COVERAGE_SCORE
+        penalty_explanation = ""
+
+    else:
+        score = int(hit_rate * MAX_COVERAGE_SCORE / divisor)
+        penalty_explanation = """
+    Total Statements:      {}
+    Missed (hits):         {} ({})
+    Target ({}% of total): {}
+    Hit Rate:              {}%
+    Max Score Possible:    {}
+    Actual Score:          {}""".format(total_stmts,
+                                    miss_stmts, hit_stmts,
+                                    int(100*COVERAGE_TARGET), math.ceil(target_stmts),
+                                    int(100*hit_rate),
+                                    MAX_COVERAGE_SCORE,
+                                    score)
+
+        # NOTE: we used to have the summary output in the top-level json_output
+        #       variable.  But GradeScope formats that text in a way that tends
+        #       to collapse whitespace and blank lines.
+        #
+        #       The various tests, however, are all printed with <pre>, so that
+        #       preserves exactly the formatting I want.  So I moved the summary
+        #       into a first "test" block.
+
+
+    summary = """
+***********************************************
+*              COVERAGE REPORT                *
+***********************************************
+
+Summary Report:   (see subsections below for file-specific details)
+
+"""+report+penalty_explanation
+
+    testcase_results.append({ "score"      : score,
+                              "max_score"  : MAX_COVERAGE_SCORE,
+                              "name"       : "Coverage",
+                              "output"     : summary,
+                              "visibility" : "always",
+                            })
+
+
+
+    # print out a detailed coverage report for every file
+
+    for fname in sorted(annotated_filenames):
+        with open(fname) as annotation:
+            testcase_results.append({
+                                      "output"    : """COVERAGE DETAILS FOR: {}
+
+NOTE: Covered lines are marked with > while missing lines are marked with !
+
+---------------------- BEGIN SOURCE CODE ----------------------
+
+{}""".format(fname, annotation.read()),
+                                          "visibility": "always",
+                                    })
+
+
+
+json_output = {
+                "stdout_visibility" : "never",
+                "tests"             : testcase_results,
+              }
+
+with open(json_filename, "w") as json_file:
+    json.dump(json_output, json_file, indent=2)
+
+
+print("AUTOGRADER COMPLETED SUCCESSFULLY")
+
+

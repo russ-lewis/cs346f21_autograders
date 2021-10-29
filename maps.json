@@ -12,6 +12,11 @@
   },
 
   "assignments" : {
+    "Project 01": "dummy_autograder",
+    "Project 02": "dummy_autograder",
+    "Project 03": "dummy_autograder",
+    "Project 04": "dummy_autograder",
+
     "Project 05": "proj05",
     "Project 06": "proj06",
 

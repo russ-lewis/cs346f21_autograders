@@ -13,7 +13,7 @@ import math
 
 # CONFIG OPTIONS (overall)
 
-MAX_TESTCASE_SCORE = 0
+MAX_TESTCASE_SCORE = 100
 
 DUMMY_ERROR_MESSAGES = False
 
@@ -39,17 +39,19 @@ else:
 
 
 
-instructor_testcase_list = [name.split('/')[-1].split('.')[0] for name in glob.glob("../instructor_code/test-*.py")]
-instructor_infile_list   = [name.split('/')[-1].split('.')[0] for name in glob.glob("../instructor_code/test-*.in")]
-instructor_stdin_list    = [name.split('/')[-1].split('.')[0] for name in glob.glob("../instructor_code/test-*.stdin")]
+instructor_testcase_list  = [name.split('/')[-1].split('.')[0] for name in glob.glob("../instructor_code/test-*.py")]
+instructor_shelltest_list = [name.split('/')[-1].split('.')[0] for name in glob.glob("../instructor_code/test-*.sh")]
+instructor_infile_list    = [name.split('/')[-1].split('.')[0] for name in glob.glob("../instructor_code/test-*.in")]
+instructor_stdin_list     = [name.split('/')[-1].split('.')[0] for name in glob.glob("../instructor_code/test-*.stdin")]
 
 # these are for testcases that have to be manually examined
-noCheck_testcase_list = [name.split('/')[-1].split('.')[0] for name in glob.glob("../instructor_code/noCheck-*.py")]
-noCheck_infile_list   = [name.split('/')[-1].split('.')[0] for name in glob.glob("../instructor_code/noCheck-*.in")]
-noCheck_stdin_list    = [name.split('/')[-1].split('.')[0] for name in glob.glob("../instructor_code/noCheck-*.stdin")]
+noCheck_testcase_list  = [name.split('/')[-1].split('.')[0] for name in glob.glob("../instructor_code/noCheck-*.py")]
+noCheck_shelltest_list = [name.split('/')[-1].split('.')[0] for name in glob.glob("../instructor_code/noCheck-*.sh")]
+noCheck_infile_list    = [name.split('/')[-1].split('.')[0] for name in glob.glob("../instructor_code/noCheck-*.in")]
+noCheck_stdin_list     = [name.split('/')[-1].split('.')[0] for name in glob.glob("../instructor_code/noCheck-*.stdin")]
 
-for filename in instructor_testcase_list + instructor_infile_list + instructor_stdin_list + \
-                   noCheck_testcase_list +    noCheck_infile_list +    noCheck_stdin_list :
+for filename in instructor_testcase_list + instructor_shelltest_list + instructor_infile_list + instructor_stdin_list + \
+                   noCheck_testcase_list +    noCheck_shelltest_list +    noCheck_infile_list +    noCheck_stdin_list :
     assert os.path.exists(filename+".out")
 
 
@@ -61,7 +63,7 @@ reqd_student_py_files = []
 
 
 # TODO: Do we get bitten by floating-point issues often?
-per_testcase = MAX_TESTCASE_SCORE / len(instructor_testcase_list + instructor_infile_list + instructor_stdin_list) / divisor
+per_testcase = MAX_TESTCASE_SCORE / len(instructor_testcase_list + instructor_shelltest_list + instructor_infile_list + instructor_stdin_list) / divisor
 
 
 
@@ -69,6 +71,17 @@ per_testcase = MAX_TESTCASE_SCORE / len(instructor_testcase_list + instructor_in
 # have .out files?
 for basename in instructor_testcase_list:
     test_prog = basename+".py"
+    outfile   = basename+".out"
+
+    if not os.path.exists(test_prog):
+        print("CONFIG ERROR: The anticipated instructor testcase, {}, does not exist.".format(test_prog))
+        sys.exit(1)
+    if not os.path.exists(outfile):
+        print("CONFIG ERROR: The instructor testcase, {}, does not have a matching output file {}.".format(test_prog,outfile))
+        sys.exit(1)
+
+for basename in instructor_shelltest_list:
+    test_prog = basename+".sh"
     outfile   = basename+".out"
 
     if not os.path.exists(test_prog):
@@ -133,7 +146,7 @@ json_filename = RESULT_DIR + "/results.json"
 all_testcases = [name.split('.')[0] for name in glob.glob("test-*.py")+glob.glob("test-*.in")]
 
 student_testcase_list = [name.split('.')[0] for name in glob.glob("cover_*.py")] + \
-                        sorted(set(all_testcases) - set(instructor_testcase_list) - set(instructor_infile_list) - set(instructor_stdin_list))
+                        sorted(set(all_testcases) - set(instructor_testcase_list) - set(instructor_shelltest_list) - set(instructor_infile_list) - set(instructor_stdin_list))
 
 
 
@@ -199,9 +212,11 @@ testcase_results.append({   # no score for style; ordinary testcases get
 
 
 
-for MODE in ["py","in","stdin"]:
+for MODE in ["py","sh","in","stdin"]:
     if MODE == "py":
         testcases = instructor_testcase_list
+    elif MODE == "sh":
+        testcases = instructor_shelltest_list
     elif MODE == "in":
         testcases = instructor_infile_list
     elif MODE == "stdin":
@@ -219,20 +234,23 @@ for MODE in ["py","in","stdin"]:
 
         # is the testcase a program, or an input file of some sort?
         if MODE == "py":
-            prog = basename+".py"
+            prog = f"python3 -u {basename}.py"
+
+        elif MODE == "sh":
+            prog = f"./{basename}.sh"
 
         elif MODE in ["in","stdin"]:
             basename_pieces = basename.split('-')
             assert basename_pieces[0] == "test"
 
-            prog = basename_pieces[1]+".py"
+            prog = f"{basename_pieces[1]}.py"
 
         else:
             assert False
 
 
         # where does stdin come from?
-        if MODE == "py":
+        if MODE in ["py","sh"]:
             input_cmd = "cat /dev/null"
         elif MODE == "in":
             input_cmd = f"echo {basename}.in"
@@ -248,7 +266,7 @@ for MODE in ["py","in","stdin"]:
 
         # run the testcase, save the output.
 
-        rc = os.system(f"{input_cmd} | timeout {TIMEOUT} python3 -u {prog} > {student_outfile} 2>&1")
+        rc = os.system(f"{input_cmd} | timeout {TIMEOUT} {prog} > {student_outfile} 2>&1")
         timeout_occurred = (rc == 124*256)
 
         with open(student_outfile) as student_out:

@@ -3,6 +3,10 @@
 import requests
 import json
 
+import os
+os.system("bash setup_empty_server")
+
+
 
 def crop_location(loc):
     pieces = loc.split('/')
@@ -14,9 +18,6 @@ def crop_location(loc):
 
 def print_location(req):
     print(f"Location: {crop_location(r.headers['Location'])}")
-
-
-
 
 
 

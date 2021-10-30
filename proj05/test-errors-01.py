@@ -1,7 +1,9 @@
 #! /usr/bin/python3
 
-
 import requests
+
+import os
+os.system("bash setup_empty_server")
 
 
 print("This should be error 404, twice")

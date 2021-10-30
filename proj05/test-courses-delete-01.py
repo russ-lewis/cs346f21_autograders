@@ -3,6 +3,9 @@
 import requests
 import json
 
+import os
+os.system("bash setup_empty_server")
+
 
 
 def crop_location(loc):

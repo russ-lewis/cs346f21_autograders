@@ -2,6 +2,11 @@
 
 import requests
 
+import os
+os.system("bash setup_empty_server")
+
+
+
 r = requests.get("http://127.0.0.1/cgi-bin/school/courses")
 
 print(f"Status: {r.status_code}")

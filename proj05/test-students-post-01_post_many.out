@@ -1,0 +1,57 @@
+POST-ing...
+Status: 303
+Location: cgi-bin/school/students/123
+
+POST-ing...
+Status: 303
+Location: cgi-bin/school/students/456
+
+POST-ing...
+Status: 303
+Location: cgi-bin/school/students/2
+
+POST-ing...
+Status: 303
+Location: cgi-bin/school/students/17
+
+POST-ing...
+Status: 303
+Location: cgi-bin/school/students/1024
+
+Doing the GET (of the whole collection) afterwards...
+Status: 200
+Body:
+[
+  {
+    "courses": [],
+    "id": 2,
+    "link": "...(edited by testcase)... cgi-bin/school/students/2",
+    "name": "Steve Wozniak"
+  },
+  {
+    "courses": [],
+    "id": 17,
+    "link": "...(edited by testcase)... cgi-bin/school/students/17",
+    "name": "Lt. Cmdr. Data"
+  },
+  {
+    "courses": [],
+    "id": 123,
+    "link": "...(edited by testcase)... cgi-bin/school/students/123",
+    "name": "foobar"
+  },
+  {
+    "courses": [],
+    "id": 456,
+    "link": "...(edited by testcase)... cgi-bin/school/students/456",
+    "name": "Albrert Einstein"
+  },
+  {
+    "courses": [],
+    "id": 1024,
+    "link": "...(edited by testcase)... cgi-bin/school/students/1024",
+    "name": "Commander Tucker"
+  }
+]
+
+END TESTCASE

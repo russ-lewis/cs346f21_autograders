@@ -1,0 +1,12 @@
+This should be error 400, four times
+Status: 400
+Status: 400
+Status: 400
+Status: 400
+
+Building a small student/course database, but with no registrations...
+
+This should be 400, once
+Status: 400
+
+END TESTCASE

@@ -1,0 +1,190 @@
+POST-ing several students...
+POST-ing several courses...
+Doing the GET (of the whole student collection) afterwards...
+Status: 200
+Body (interpreted from JSON):
+[
+  {
+    "courses": [],
+    "id": 2,
+    "link": "...(edited by testcase)... cgi-bin/school/students/2",
+    "name": "Steve Wozniak"
+  },
+  {
+    "courses": [],
+    "id": 17,
+    "link": "...(edited by testcase)... cgi-bin/school/students/17",
+    "name": "Lt. Cmdr. Data"
+  },
+  {
+    "courses": [],
+    "id": 123,
+    "link": "...(edited by testcase)... cgi-bin/school/students/123",
+    "name": "foobar"
+  },
+  {
+    "courses": [],
+    "id": 456,
+    "link": "...(edited by testcase)... cgi-bin/school/students/456",
+    "name": "Albrert Einstein"
+  },
+  {
+    "courses": [],
+    "id": 1024,
+    "link": "...(edited by testcase)... cgi-bin/school/students/1024",
+    "name": "Commander Tucker"
+  }
+]
+
+Doing the GET (of the whole course collection) afterwards...
+Status: 200
+Body (interpreted from JSON):
+[
+  {
+    "id": "basketweaving101",
+    "link": "...(edited by testcase)... cgi-bin/school/courses/basketweaving101"
+  },
+  {
+    "id": "csc110",
+    "link": "...(edited by testcase)... cgi-bin/school/courses/csc110"
+  },
+  {
+    "id": "csc120",
+    "link": "...(edited by testcase)... cgi-bin/school/courses/csc120"
+  },
+  {
+    "id": "csc210",
+    "link": "...(edited by testcase)... cgi-bin/school/courses/csc210"
+  },
+  {
+    "id": "csc352",
+    "link": "...(edited by testcase)... cgi-bin/school/courses/csc352"
+  }
+]
+
+Doing several student course POSTs...
+Doing the GET (of the whole student collection) afterwards...
+Status: 200
+Body (interpreted from JSON):
+[
+  {
+    "courses": [],
+    "id": 2,
+    "link": "...(edited by testcase)... cgi-bin/school/students/2",
+    "name": "Steve Wozniak"
+  },
+  {
+    "courses": [],
+    "id": 17,
+    "link": "...(edited by testcase)... cgi-bin/school/students/17",
+    "name": "Lt. Cmdr. Data"
+  },
+  {
+    "courses": [
+      "csc110",
+      "csc120",
+      "csc352"
+    ],
+    "id": 123,
+    "link": "...(edited by testcase)... cgi-bin/school/students/123",
+    "name": "foobar"
+  },
+  {
+    "courses": [
+      "csc120"
+    ],
+    "id": 456,
+    "link": "...(edited by testcase)... cgi-bin/school/students/456",
+    "name": "Albrert Einstein"
+  },
+  {
+    "courses": [],
+    "id": 1024,
+    "link": "...(edited by testcase)... cgi-bin/school/students/1024",
+    "name": "Commander Tucker"
+  }
+]
+
+Doing the GET (of the whole course collection) afterwards...
+Status: 200
+Body (interpreted from JSON):
+[
+  {
+    "id": "basketweaving101",
+    "link": "...(edited by testcase)... cgi-bin/school/courses/basketweaving101"
+  },
+  {
+    "id": "csc110",
+    "link": "...(edited by testcase)... cgi-bin/school/courses/csc110"
+  },
+  {
+    "id": "csc120",
+    "link": "...(edited by testcase)... cgi-bin/school/courses/csc120"
+  },
+  {
+    "id": "csc210",
+    "link": "...(edited by testcase)... cgi-bin/school/courses/csc210"
+  },
+  {
+    "id": "csc352",
+    "link": "...(edited by testcase)... cgi-bin/school/courses/csc352"
+  }
+]
+
+Deleting one student...
+Status: 303
+Location: cgi-bin/school/students
+
+Deleting one student...
+Status: 303
+Location: cgi-bin/school/students
+
+Deleting one student...
+Status: 303
+Location: cgi-bin/school/students
+
+Doing the GET (of the whole student collection) afterwards...
+Status: 200
+Body (interpreted from JSON):
+[
+  {
+    "courses": [],
+    "id": 2,
+    "link": "...(edited by testcase)... cgi-bin/school/students/2",
+    "name": "Steve Wozniak"
+  },
+  {
+    "courses": [],
+    "id": 17,
+    "link": "...(edited by testcase)... cgi-bin/school/students/17",
+    "name": "Lt. Cmdr. Data"
+  }
+]
+
+Doing the GET (of the whole course collection) afterwards...
+Status: 200
+Body (interpreted from JSON):
+[
+  {
+    "id": "basketweaving101",
+    "link": "...(edited by testcase)... cgi-bin/school/courses/basketweaving101"
+  },
+  {
+    "id": "csc110",
+    "link": "...(edited by testcase)... cgi-bin/school/courses/csc110"
+  },
+  {
+    "id": "csc120",
+    "link": "...(edited by testcase)... cgi-bin/school/courses/csc120"
+  },
+  {
+    "id": "csc210",
+    "link": "...(edited by testcase)... cgi-bin/school/courses/csc210"
+  },
+  {
+    "id": "csc352",
+    "link": "...(edited by testcase)... cgi-bin/school/courses/csc352"
+  }
+]
+
+END TESTCASE

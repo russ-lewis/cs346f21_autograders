@@ -1,0 +1,14 @@
+Doing the original POST...
+Status: 303
+Location: cgi-bin/school/students/123
+
+Doing the DELETE...
+Status: 303
+Location: cgi-bin/school/students
+
+Doing the GET (of the whole collection) afterwards...
+Status: 200
+Body (interpreted from JSON):
+[]
+
+END TESTCASE

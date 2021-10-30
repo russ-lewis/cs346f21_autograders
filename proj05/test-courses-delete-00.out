@@ -1,0 +1,32 @@
+Doing the original POST...
+Status: 303
+Location: cgi-bin/school/courses/csc110
+
+Doing the GET (of one object) afterwards...
+Status: 200
+Body (interpreted from JSON):
+{
+  "id": "csc110",
+  "link": "http://127.0.0.1/cgi-bin/school/courses/csc110"
+}
+
+Doing the GET (of the whole collection) afterwards...
+Status: 200
+Body (interpreted from JSON):
+[
+  {
+    "id": "csc110",
+    "link": "http://127.0.0.1/cgi-bin/school/courses/csc110"
+  }
+]
+
+Doing the DELETE...
+Status: 303
+Location: cgi-bin/school/courses
+
+Doing the GET (of the whole collection) afterwards...
+Status: 200
+Body (interpreted from JSON):
+[]
+
+END TESTCASE

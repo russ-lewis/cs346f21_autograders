@@ -1,0 +1,24 @@
+This should be error 404, twice
+Status: 404
+Status: 404
+
+This should be error 405, four times
+Status: 405
+Status: 405
+Status: 405
+Status: 405
+
+Building a small student/course database...
+
+This should be 404, twice
+Status: 404
+Status: 404
+
+This should be error 405, six times
+Status: 405
+Status: 405
+Status: 405
+Status: 405
+Status: 405
+
+END TESTCASE

@@ -1,0 +1,19 @@
+Doing the original POST...
+Status: 303
+Location: cgi-bin/school/students/123
+
+Doing the PUT...
+Status: 303
+Location: cgi-bin/school/students/123
+
+Doing the GET (of one object) afterwards...
+Status: 200
+Body (interpreted from JSON):
+{
+  "courses": [],
+  "id": 123,
+  "link": "http://127.0.0.1/cgi-bin/school/students/123",
+  "name": "changed"
+}
+
+END TESTCASE

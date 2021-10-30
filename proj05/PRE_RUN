@@ -8,4 +8,5 @@ cd /etc/apache2/mods-enabled/
 ln -s ../mods-available/cgi.load
 
 service apache2 start
+sleep 5
 

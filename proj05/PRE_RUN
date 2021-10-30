@@ -1,8 +1,6 @@
 #! /bin/bash
 
 
-./setup_empty_server
-
 chmod a+x school
 cp school /usr/lib/cgi-bin/
 

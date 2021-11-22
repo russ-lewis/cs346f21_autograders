@@ -16,9 +16,10 @@
     "Project 02": "dummy_autograder",
     "Project 03": "dummy_autograder",
     "Project 04": "dummy_autograder",
-
-    "Project 05": "proj05",
-    "Project 06": "proj06",
+    "Project 05": "dummy_autograder",
+    "Project 06": "dummy_autograder",
+    "Project 07": "dummy_autograder",
+    "Project 08": "dummy_autograder",
 
     "dummy": "so that trailing commas are allowed"
   }
